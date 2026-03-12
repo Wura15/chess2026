@@ -1,6 +1,5 @@
 package com.example;
 
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Graphics;
 import java.awt.GridLayout;
@@ -9,12 +8,7 @@ import java.awt.Point;
 import java.awt.event.MouseEvent;
 import java.awt.event.MouseListener;
 import java.awt.event.MouseMotionListener;
-import java.io.File;
-import java.util.ArrayList;
-import java.net.URL;
-import java.awt.Toolkit;
 
-import javax.imageio.ImageIO;
 import javax.swing.*;
 
 //You will be implmenting a part of a function and a whole function in this document. Please follow the directions for the 
@@ -23,16 +17,8 @@ import javax.swing.*;
 public class Board extends JPanel implements MouseListener, MouseMotionListener {
     // Resource location constants for piece images
     public static final String PICTURE_PATH = "/src/main/java/com/example/Pictures/";
-    private static final String RESOURCES_WBISHOP_PNG = PICTURE_PATH + "wbishop.png";
-    private static final String RESOURCES_BBISHOP_PNG = PICTURE_PATH + "bbishop.png";
-    private static final String RESOURCES_WKNIGHT_PNG = PICTURE_PATH + "wknight.png";
-    private static final String RESOURCES_BKNIGHT_PNG = PICTURE_PATH + "bknight.png";
-    private static final String RESOURCES_WROOK_PNG = PICTURE_PATH + "wrook.png";
-    private static final String RESOURCES_BROOK_PNG = PICTURE_PATH + "brook.png";
     private static final String RESOURCES_WKING_PNG = PICTURE_PATH + "wking.png";
     private static final String RESOURCES_BKING_PNG = PICTURE_PATH + "bking.png";
-    private static final String RESOURCES_BQUEEN_PNG = PICTURE_PATH + "bqueen.png";
-    private static final String RESOURCES_WQUEEN_PNG = PICTURE_PATH + "wqueen.png";
     private static final String RESOURCES_WPAWN_PNG = PICTURE_PATH + "wpawn.png";
     private static final String RESOURCES_BPAWN_PNG = PICTURE_PATH + "bpawn.png";
 
@@ -41,7 +27,6 @@ public class Board extends JPanel implements MouseListener, MouseMotionListener 
 
     // Logical and graphical representations of board
     private final Square[][] board;
-    private final GameWindow g;
 
     // contains true if it's white's turn.
     private boolean whiteTurn;
@@ -58,7 +43,6 @@ public class Board extends JPanel implements MouseListener, MouseMotionListener 
     private int currY;
 
     public Board(GameWindow g) {
-        this.g = g;
         board = new Square[8][8];
         setLayout(new GridLayout(8, 8, 0, 0));
 
@@ -93,10 +77,15 @@ public class Board extends JPanel implements MouseListener, MouseMotionListener 
     // number of pieces on either side.
     // it's up to you how you wish to arrange your pieces.
     void initializePieces() {
-
-        board[0][0].put(new Piece(true, RESOURCES_WKING_PNG));
-
+        
+        board[7][4].put(new Piece(true, RESOURCES_WKING_PNG));
+        board[0][4].put(new Piece(true, RESOURCES_BKING_PNG));
+         for (int i = 0; i < 8; i++) {
+            board[6][i].put(new Piece(true, RESOURCES_WPAWN_PNG));
+            board[1][i].put(new Piece(false, RESOURCES_BPAWN_PNG));
+         }
     }
+
 
     public Square[][] getSquareArray() {
         return this.board;
@@ -155,8 +144,14 @@ public class Board extends JPanel implements MouseListener, MouseMotionListener 
         endSquare = (Square) this.getComponentAt(new Point(e.getX(), e.getY()));
 
         // using currPiece
-        if(fromMoveSquare!= null){
-            fromMoveSquare.setDisplay(true);
+        if(fromMoveSquare != null && currPiece != null && endSquare != null){
+            if(currPiece.isLegalMove(fromMoveSquare, endSquare, board)){
+                endSquare.put(currPiece);
+                fromMoveSquare.removePiece();
+                whiteTurn = !whiteTurn;
+            } else {
+                fromMoveSquare.setDisplay(true);
+            }
         }
         currPiece = null;
         repaint();

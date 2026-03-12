@@ -2,7 +2,6 @@ package com.example;
 
 import java.awt.Color;
 import java.awt.Graphics;
-import java.util.ArrayList;
 
 import javax.swing.*;
 
@@ -11,9 +10,6 @@ import javax.swing.*;
 //to represent the chessboard.
 @SuppressWarnings("serial")
 public class Square extends JComponent {
-	//a reference back to the board that stores this square.
-    private Board b;
-    
     //true for white, false for black.
     private final boolean color;
     
@@ -30,7 +26,6 @@ public class Square extends JComponent {
     
     public Square(Board b, boolean isWhite, int row, int col) {
         
-        this.b = b;
         this.color = isWhite;
         this.dispPiece = true;
         this.row = row;
