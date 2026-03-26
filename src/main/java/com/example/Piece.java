@@ -2,36 +2,28 @@ package com.example;
 
 import java.awt.Graphics;
 import java.awt.Image;
+import java.awt.image.BufferedImage;
+import java.io.File;
+import java.io.IOException;
+import java.util.ArrayList;
 
-/**
- * Eagle chess piece.
- *
- * The eagle may move exactly five squares in any of the eight principal
- * directions (horizontal, vertical, or diagonal). It cannot jump over
- * other pieces – all intervening squares between the start and end
- * squares must be empty.
- *
- * The image you pass in should be the eagle image for this piece
- * (for example: "weagle.png" for a white eagle or "beagle.png" for a
- * black eagle in your Pictures folder).
- */
+import javax.imageio.ImageIO;
+
+//you will need to implement two functions in this file.
 public class Piece {
+    private final boolean color;
+    private BufferedImage img;
 
-    // true == white eagle, false == black eagle
-    private boolean color;
+    public Piece(boolean isWhite, String img_file) {
+        this.color = isWhite;
 
-    // the eagle graphic that will be drawn on the board
-    private Image image;
-
-    /**
-     * Creates an eagle piece of the given color using the given eagle image path.
-     *
-     * @param color     true for white eagle, false for black eagle
-     * @param imagePath path to the eagle image file (e.g. "weagle.png" / "beagle.png")
-     */
-    public Piece(boolean color, String imagePath) {
-        this.color = color;
-        this.image = Utils.loadImage(imagePath);  // loads the eagle image
+        try {
+            if (this.img == null) {
+                this.img = ImageIO.read(new File(System.getProperty("user.dir") + img_file));
+            }
+        } catch (IOException e) {
+            System.out.println("File not found: " + e.getMessage());
+        }
     }
 
     public boolean getColor() {
@@ -39,94 +31,238 @@ public class Piece {
     }
 
     public Image getImage() {
-        return image;
+        return img;
     }
 
-    /**
-     * Determines whether a move from {@code from} to {@code to} is legal
-     * for this eagle on the supplied board.
-     */
-    public boolean isLegalMove(Square from, Square to, Square[][] board) {
-        if (from == null || to == null) {
-            return false;
-        }
+    //precondition: g and currentSquare must be non-null valid objects.
+    //postcondition: the image stored in the img property of this object is drawn to the screen.
+    public void draw(Graphics g, Square currentSquare) {
+        int x = currentSquare.getX();
+        int y = currentSquare.getY();
 
-        // no movement
-        if (from == to) {
-            return false;
-        }
-
-        // sanity check: this piece must actually be on the from-square
-        if (from.getOccupyingPiece() != this) {
-            return false;
-        }
-
-        // cannot capture own color
-        Piece dest = to.getOccupyingPiece();
-        if (dest != null && dest.getColor() == this.color) {
-            return false;
-        }
-
-        int r1 = from.getRow();
-        int c1 = from.getCol();
-        int r2 = to.getRow();
-        int c2 = to.getCol();
-
-        int dr = Math.abs(r2 - r1);
-        int dc = Math.abs(c2 - c1);
-
-        // EAGLE MOVEMENT:
-        // must move exactly 5 squares either vertically, horizontally, or diagonally
-        boolean correctDistance =
-                (dr == 5 && dc == 0) ||   // vertical
-                (dr == 0 && dc == 5) ||   // horizontal
-                (dr == 5 && dc == 5);     // diagonal
-
-        if (!correctDistance) {
-            return false;
-        }
-
-        // eagle cannot jump over pieces – path must be clear
-        return pathClear(from, to, board);
+        g.drawImage(this.img, x, y, null);
     }
 
-    /**
-     * Returns true if every square between {@code from} and {@code to}
-     * (exclusive) is empty. Assumes a straight or diagonal line.
-     */
-    private boolean pathClear(Square from, Square to, Square[][] board) {
-        int r1 = from.getRow();
-        int c1 = from.getCol();
-        int r2 = to.getRow();
-        int c2 = to.getCol();
- 
-        int dr = Integer.signum(r2 - r1);
-        int dc = Integer.signum(c2 - c1);
-        int steps = Math.max(Math.abs(r2 - r1), Math.abs(c2 - c1));
+    // return a list of every square that is "controlled" by this piece.
+    // a square is controlled if the piece could capture into it legally.
+    public ArrayList<Square> getControlledSquares(Square[][] board, Square start) {
+        ArrayList<Square> controlled = new ArrayList<>();
 
-        for (int i = 1; i < steps; i++) {
-            int rr = r1 + dr * i;
-            int cc = c1 + dc * i;
-            if (board[rr][cc].isOccupied()) {
-                return false;
+        if (board == null || start == null) {
+            return controlled;
+        }
+
+        int startRow = start.getRow();
+        int startCol = start.getCol();
+
+        // 8 directions: up, down, left, right, and diagonals
+        int[][] directions = {
+            {-1,  0}, // up
+            { 1,  0}, // down
+            { 0, -1}, // left
+            { 0,  1}, // right
+            {-1, -1}, // up-left
+            {-1,  1}, // up-right
+            { 1, -1}, // down-left
+            { 1,  1}  // down-right
+        };
+
+        // move up to 5 squares in each direction
+        for (int d = 0; d < directions.length; d++) {
+            int dr = directions[d][0];
+            int dc = directions[d][1];
+
+            for (int step = 1; step <= 5; step++) {
+                int r = startRow + dr * step;
+                int c = startCol + dc * step;
+
+                // in bounds?
+                if (r < 0 || r >= board.length || c < 0 || c >= board[0].length) {
+                    break; // stop in this direction
+                }
+
+                Square square = board[r][c];
+
+                if (!square.isOccupied()) {
+                    // empty square is controlled (we could move there)
+                    controlled.add(square);
+                } else {
+                    // occupied: if enemy, we control that square, then stop
+                    if (square.getOccupyingPiece().getColor() != color) {
+                        controlled.add(square);
+                    }
+                    // friend or enemy blocks any further squares in this direction
+                    break;
+                }
             }
         }
-        return true;
+
+        return controlled;
     }
 
-    /**
-     * Draws the eagle image on the given square.
-     */
-    public void draw(Graphics g, Square square) {
-        if (image == null || g == null || square == null) {
-            return;
+    // implement the move function here
+    // returns an ArrayList of squares which are legal to move to
+    public ArrayList<Square> getLegalMoves(Board b, Square start) {
+        ArrayList<Square> moves = new ArrayList<>();
+
+        if (b == null || start == null) {
+            return moves;
         }
 
-        int x = square.getX();
-        int y = square.getY();
-        int w = square.getWidth();
-        int h = square.getHeight();
+        // get double array out of Board
+        Square[][] allSquares = b.getSquareArray();
 
-        g.drawImage(image, x, y, w, h, null);
+        // where you are is start.getRow(), start.getCol()
+        int row = start.getRow();
+        int col = start.getCol();
+
+        // try going up (this is what YOU started)
+        for (int i = 1; i <= 5; i++) {
+            // in bounds?
+            if (row - i >= 0) {
+                Square square = allSquares[row - i][col];
+                if (!square.isOccupied()) {
+                    moves.add(square);
+                } else {
+                    // occupied square: can only move here if enemy piece
+                    if (square.getOccupyingPiece().getColor() != color) {
+                        moves.add(square);
+                    }
+                    // stop going further up
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+
+        // try going down
+        for (int i = 1; i <= 5; i++) {
+            if (row + i < allSquares.length) {
+                Square square = allSquares[row + i][col];
+                if (!square.isOccupied()) {
+                    moves.add(square);
+                } else {
+                    if (square.getOccupyingPiece().getColor() != color) {
+                        moves.add(square);
+                    }
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+
+        // try going left
+        for (int i = 1; i <= 5; i++) {
+            if (col - i >= 0) {
+                Square square = allSquares[row][col - i];
+                if (!square.isOccupied()) {
+                    moves.add(square);
+                } else {
+                    if (square.getOccupyingPiece().getColor() != color) {
+                        moves.add(square);
+                    }
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+
+        // try going right
+        for (int i = 1; i <= 5; i++) {
+            if (col + i < allSquares[0].length) {
+                Square square = allSquares[row][col + i];
+                if (!square.isOccupied()) {
+                    moves.add(square);
+                } else {
+                    if (square.getOccupyingPiece().getColor() != color) {
+                        moves.add(square);
+                    }
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+
+        // up-left
+        for (int i = 1; i <= 5; i++) {
+            int r = row - i;
+            int c = col - i;
+            if (r >= 0 && c >= 0) {
+                Square square = allSquares[r][c];
+                if (!square.isOccupied()) {
+                    moves.add(square);
+                } else {
+                    if (square.getOccupyingPiece().getColor() != color) {
+                        moves.add(square);
+                    }
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+
+        // up-right
+        for (int i = 1; i <= 5; i++) {
+            int r = row - i;
+            int c = col + i;
+            if (r >= 0 && c < allSquares[0].length) {
+                Square square = allSquares[r][c];
+                if (!square.isOccupied()) {
+                    moves.add(square);
+                } else {
+                    if (square.getOccupyingPiece().getColor() != color) {
+                        moves.add(square);
+                    }
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+
+        // down-left
+        for (int i = 1; i <= 5; i++) {
+            int r = row + i;
+            int c = col - i;
+            if (r < allSquares.length && c >= 0) {
+                Square square = allSquares[r][c];
+                if (!square.isOccupied()) {
+                    moves.add(square);
+                } else {
+                    if (square.getOccupyingPiece().getColor() != color) {
+                        moves.add(square);
+                    }
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+
+        // down-right
+        for (int i = 1; i <= 5; i++) {
+            int r = row + i;
+            int c = col + i;
+            if (r < allSquares.length && c < allSquares[0].length) {
+                Square square = allSquares[r][c];
+                if (!square.isOccupied()) {
+                    moves.add(square);
+                } else {
+                    if (square.getOccupyingPiece().getColor() != color) {
+                        moves.add(square);
+                    }
+                    break;
+                }
+            } else {
+                break;
+            }
+        }
+
+        return moves;
     }
 }
