@@ -77,7 +77,8 @@ public class Board extends JPanel implements MouseListener, MouseMotionListener 
 
                 // create a new Square using (Board, boolean, row, col)
                 Square sq = new Square(this, isWhite, row, column);
-
+                
+                
                 // store it in the board array
                 board[row][column] = sq;
 
