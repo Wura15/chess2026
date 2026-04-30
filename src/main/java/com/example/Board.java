@@ -22,7 +22,7 @@ import javax.swing.*;
 @SuppressWarnings("serial")
 public class Board extends JPanel implements MouseListener, MouseMotionListener {
     // Resource location constants for piece images
-    public static final String PICTURE_PATH = "/src/main/java/com/example/Pictures/";
+    public static final String PICTURE_PATH = "/workspaces/chess2026/src/main/java/com/example/Pictures/";
     private static final String RESOURCES_WBISHOP_PNG = PICTURE_PATH + "wbishop.png";
     private static final String RESOURCES_BBISHOP_PNG = PICTURE_PATH + "bbishop.png";
     private static final String RESOURCES_WKNIGHT_PNG = PICTURE_PATH + "wknight.png";
@@ -104,23 +104,26 @@ public class Board extends JPanel implements MouseListener, MouseMotionListener 
     // it's up to you how you wish to arrange your pieces.
     void initializePieces() {
         // place white eagle on row 7, col 4
-        board[7][4].put(new Piece(true, RESOURCES_WEAGLE_PNG));
+        board[7][4].put(new Eagle(true, RESOURCES_WEAGLE_PNG));
+        board[2][5].put(new King(true, RESOURCES_WKING_PNG));
 
         // place black eagle on row 0, col 4
-        board[0][4].put(new Piece(false, RESOURCES_BEAGLE_PNG));
+        board[0][4].put(new Eagle(false, RESOURCES_BEAGLE_PNG));
+        board[3][5].put(new King(false, RESOURCES_BKING_PNG));
 
         // a row of white eagles on row 6
         for (int i = 0; i < 8; i++) {
-            board[6][i].put(new Piece(true, RESOURCES_WEAGLE_PNG));
+            board[6][i].put(new Eagle(true, RESOURCES_WEAGLE_PNG));
+            board[7][i].put(new King(true, RESOURCES_WKING_PNG));
         }
 
         // a row of black eagles on row 1
         for (int i = 0; i < 8; i++) {
-            board[1][i].put(new Piece(false, RESOURCES_BEAGLE_PNG));
+            board[1][i].put(new Eagle(false, RESOURCES_BEAGLE_PNG));
+            board[0][i].put(new King(false, RESOURCES_BKING_PNG));
         }
 
         
-        board[0][0].put(new Piece(false, RESOURCES_BEAGLE_PNG));
     }
 
     public Square[][] getSquareArray() {
